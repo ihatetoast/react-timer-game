@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 // this is for react 19 and later
 export default function ResultModal({ ref, targetTime, remainingTime, onReset }) {
@@ -6,6 +7,8 @@ export default function ResultModal({ ref, targetTime, remainingTime, onReset })
 
   const userLost = remainingTime <= 0;
   const formattedRemainingTime = (remainingTime / 1000).toFixed(2);
+  // rem time is milli but targ time is seconds
+  const score = Math.round((1 - remainingTime / (targetTime * 1000)) * 100);
   useImperativeHandle(ref, () => {
     return {
       open() {
@@ -14,17 +17,23 @@ export default function ResultModal({ ref, targetTime, remainingTime, onReset })
     };
   });
 
-  return (
-    <dialog ref={dialog} className='result-modal'>
-      {userLost &&  <h2>You slow, yo.</h2>}
+
+// portal example: good for overlays but also anywhere you want to yeet
+// a component out of the zone where you're using it.
+  return createPortal(
+    <dialog ref={dialog} className='result-modal' onClose={onReset}>
+      {userLost &&  <h2>You lost</h2>}
+      {!userLost &&  <><h2>Your score: {score}</h2><p>Look at you, Boo. <br />Getting all fancy with your clickety clicks.</p></>}
+
       <p>
         The target time was <strong>{targetTime}</strong> seconds. <br />You stopped
-        the timer with <strong>{formattedRemainingTime} second{formattedRemainingTime === 1 ? '' : 's'} left.</strong>
+        the timer with <strong>{formattedRemainingTime} second{+formattedRemainingTime === 1 ? '' : 's'} left.</strong>
       </p>
       <form method='dialog' onSubmit={onReset}>
         <button>Close</button>
       </form>
-    </dialog>
+    </dialog>,
+    document.getElementById('modal')
   );
 }
 
